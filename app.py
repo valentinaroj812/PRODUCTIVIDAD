@@ -55,7 +55,7 @@ else:
 
 
             # Exportar a Excel
-            from io import BytesIO
+from io import BytesIO
             import xlsxwriter
 
             output = BytesIO()
