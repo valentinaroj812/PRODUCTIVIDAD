@@ -1,28 +1,53 @@
 import streamlit as st
 import pandas as pd
 
-st.title("📊 Productividad Total por Oficina (Colocador + Captador)")
+st.title("📊 Reporte de Productividad por Oficina")
 
 uploaded_file = st.file_uploader("Sube un archivo Excel (.xlsx)", type="xlsx")
 
 if uploaded_file:
     try:
         df = pd.read_excel(uploaded_file, sheet_name=0)
-        if 'OFICINA COLOCADOR' in df.columns and 'OFICINA CAPTADOR' in df.columns and 'Precio Cierre' in df.columns:
-            # Combinar colocador y captador
-            colocadores = df[['OFICINA COLOCADOR', 'Precio Cierre']].rename(columns={'OFICINA COLOCADOR': 'OFICINA'})
-            captadores = df[['OFICINA CAPTADOR', 'Precio Cierre']].rename(columns={'OFICINA CAPTADOR': 'OFICINA'})
-            oficinas = pd.concat([colocadores, captadores], axis=0)
-            oficinas = oficinas.dropna(subset=['OFICINA'])
 
-            # Agrupar por oficina
-            df_grouped = oficinas.groupby('OFICINA')['Precio Cierre'].sum().reset_index()
-            df_grouped = df_grouped.sort_values(by='Precio Cierre', ascending=False)
+        if all(col in df.columns for col in ['OFICINA COLOCADOR', 'OFICINA CAPTADOR', 'Precio Cierre']):
+            st.header("🔹 Productividad por Rol")
 
-            st.success("✅ Productividad total calculada con éxito")
-            st.dataframe(df_grouped, use_container_width=True)
+            # Colocador
+            colocador = df[['OFICINA COLOCADOR', 'Precio Cierre']].dropna(subset=['OFICINA COLOCADOR'])
+            colocador = colocador.rename(columns={'OFICINA COLOCADOR': 'OFICINA'})
+            colocador_grouped = colocador.groupby('OFICINA')['Precio Cierre'].sum().reset_index()
+            colocador_grouped = colocador_grouped.sort_values(by='Precio Cierre', ascending=False)
+            st.subheader("🟦 Colocador")
+            st.dataframe(colocador_grouped, use_container_width=True)
+
+            # Captador
+            captador = df[['OFICINA CAPTADOR', 'Precio Cierre']].dropna(subset=['OFICINA CAPTADOR'])
+            captador = captador.rename(columns={'OFICINA CAPTADOR': 'OFICINA'})
+            captador_grouped = captador.groupby('OFICINA')['Precio Cierre'].sum().reset_index()
+            captador_grouped = captador_grouped.sort_values(by='Precio Cierre', ascending=False)
+            st.subheader("🟩 Captador")
+            st.dataframe(captador_grouped, use_container_width=True)
+
+            # Total (Colocador + Captador)
+            st.header("🔹 Productividad Total por Oficina (Colocador + Captador)")
+            oficinas_combined = pd.concat([colocador, captador], axis=0)
+            total_grouped = oficinas_combined.groupby('OFICINA')['Precio Cierre'].sum().reset_index()
+            total_grouped = total_grouped.sort_values(by='Precio Cierre', ascending=False)
+            st.dataframe(total_grouped, use_container_width=True)
+
+            # Número de operaciones como colocador + captador
+            st.header("🔹 Número de Operaciones por Oficina")
+
+            colocador_ops = df['OFICINA COLOCADOR'].value_counts().rename_axis('OFICINA').reset_index(name='Operaciones Colocador')
+            captador_ops = df['OFICINA CAPTADOR'].value_counts().rename_axis('OFICINA').reset_index(name='Operaciones Captador')
+            total_ops = pd.merge(colocador_ops, captador_ops, on='OFICINA', how='outer').fillna(0)
+            total_ops['Operaciones Totales'] = total_ops['Operaciones Colocador'] + total_ops['Operaciones Captador']
+            total_ops = total_ops.sort_values(by='Operaciones Totales', ascending=False)
+            st.dataframe(total_ops, use_container_width=True)
+
         else:
-            st.error("❌ El archivo debe contener las columnas: 'OFICINA COLOCADOR', 'OFICINA CAPTADOR' y 'Precio Cierre'")
+            st.error("❌ El archivo debe contener las columnas: 'OFICINA COLOCADOR', 'OFICINA CAPTADOR' y 'Precio Cierre'.")
+
     except Exception as e:
         st.error(f"Error procesando el archivo: {e}")
 else:
