@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+from io import BytesIO
+import xlsxwriter
 
 st.title("📊 Reporte de Productividad por Oficina")
 
@@ -35,9 +37,8 @@ if uploaded_file:
             total_grouped = total_grouped.sort_values(by='Precio Cierre', ascending=False)
             st.dataframe(total_grouped, use_container_width=True)
 
-            # Número de operaciones como colocador + captador
+            # Número de operaciones
             st.header("🔹 Número de Operaciones por Oficina")
-
             colocador_ops = df['OFICINA COLOCADOR'].value_counts().rename_axis('OFICINA').reset_index(name='Operaciones Colocador')
             captador_ops = df['OFICINA CAPTADOR'].value_counts().rename_axis('OFICINA').reset_index(name='Operaciones Captador')
             total_ops = pd.merge(colocador_ops, captador_ops, on='OFICINA', how='outer').fillna(0)
@@ -45,19 +46,7 @@ if uploaded_file:
             total_ops = total_ops.sort_values(by='Operaciones Totales', ascending=False)
             st.dataframe(total_ops, use_container_width=True)
 
-        else:
-            st.error("❌ El archivo debe contener las columnas: 'OFICINA COLOCADOR', 'OFICINA CAPTADOR' y 'Precio Cierre'.")
-
-    except Exception as e:
-        st.error(f"Error procesando el archivo: {e}")
-else:
-    st.info("📁 Esperando que subas un archivo Excel.")
-
-
             # Exportar a Excel
-from io import BytesIO
-            import xlsxwriter
-
             output = BytesIO()
             with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
                 colocador_grouped.to_excel(writer, index=False, sheet_name='Colocador')
@@ -71,3 +60,11 @@ from io import BytesIO
                 file_name="productividad_oficinas.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
+
+        else:
+            st.error("❌ El archivo debe contener las columnas: 'OFICINA COLOCADOR', 'OFICINA CAPTADOR' y 'Precio Cierre'.")
+
+    except Exception as e:
+        st.error(f"Error procesando el archivo: {e}")
+else:
+    st.info("📁 Esperando que subas un archivo Excel.")
