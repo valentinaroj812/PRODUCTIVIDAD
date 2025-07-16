@@ -1,50 +1,22 @@
-from flask import Flask, request, render_template_string
+import streamlit as st
 import pandas as pd
 
-app = Flask(__name__)
+st.title("📊 Productividad por Oficina")
 
-TEMPLATE = """
-<!doctype html>
-<html>
-<head>
-    <title>Productividad por Oficina</title>
-    <style>
-        body { font-family: Arial; padding: 2em; }
-        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 0.5em; }
-        th { background-color: #f2f2f2; }
-    </style>
-</head>
-<body>
-    <h2>Productividad por Oficina</h2>
-    <form method="POST" enctype="multipart/form-data">
-        <p>Sube el archivo Excel:</p>
-        <input type="file" name="file" accept=".xlsx" required>
-        <input type="submit" value="Procesar">
-    </form>
-    {% if data %}
-    <h3>Resultados:</h3>
-    <table>
-        <tr><th>Oficina</th><th>Productividad (Precio Cierre)</th></tr>
-        {% for row in data %}
-        <tr><td>{{ row[0] }}</td><td>{{ "{:,.2f}".format(row[1]) }}</td></tr>
-        {% endfor %}
-    </table>
-    {% endif %}
-</body>
-</html>
-"""
+uploaded_file = st.file_uploader("Sube un archivo Excel (.xlsx)", type="xlsx")
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    data = None
-    if request.method == 'POST':
-        file = request.files['file']
-        if file:
-            df = pd.read_excel(file, sheet_name=0)
+if uploaded_file:
+    try:
+        df = pd.read_excel(uploaded_file, sheet_name=0)
+        if 'OFICINA COLOCADOR' in df.columns and 'Precio Cierre' in df.columns:
             df_grouped = df.groupby('OFICINA COLOCADOR')['Precio Cierre'].sum().reset_index()
             df_grouped = df_grouped.sort_values(by='Precio Cierre', ascending=False)
-            data = df_grouped.values.tolist()
-    return render_template_string(TEMPLATE, data=data)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+            st.success("✅ Productividad calculada con éxito")
+            st.dataframe(df_grouped, use_container_width=True)
+        else:
+            st.error("❌ El archivo no contiene las columnas necesarias: 'OFICINA COLOCADOR' y 'Precio Cierre'")
+    except Exception as e:
+        st.error(f"Error procesando el archivo: {e}")
+else:
+    st.info("📁 Esperando que subas un archivo Excel.")

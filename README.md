@@ -1,6 +1,6 @@
-# Productividad por Oficina (Flask App)
+# Productividad por Oficina (Streamlit App)
 
-Esta es una aplicación web simple en Flask que calcula la productividad de cada oficina a partir de un archivo Excel.
+Esta es una aplicación web en Streamlit que calcula la productividad de cada oficina a partir de un archivo Excel.
 
 ## Requisitos
 
@@ -10,17 +10,17 @@ Esta es una aplicación web simple en Flask que calcula la productividad de cada
 ## Instalación
 
 ```bash
-git clone https://github.com/tu-usuario/productividad-app.git
-cd productividad-app
+git clone https://github.com/tu-usuario/productividad-app-streamlit.git
+cd productividad-app-streamlit
 pip install -r requirements.txt
-python app.py
+streamlit run app.py
 ```
 
-Luego abre tu navegador en [http://localhost:5000](http://localhost:5000)
+Luego abre tu navegador en la URL que te indica el terminal (por defecto http://localhost:8501)
 
 ## Uso
 
-1. Sube un archivo Excel con una hoja que contenga la columna `OFICINA COLOCADOR` y `Precio Cierre`.
+1. Sube un archivo Excel con una hoja que contenga las columnas `OFICINA COLOCADOR` y `Precio Cierre`.
 2. Verás una tabla con la suma de productividad por oficina.
 
 ## Licencia
