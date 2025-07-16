@@ -48,7 +48,7 @@ if uploaded_file:
 
             # Exportar a Excel
             output = BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 colocador_grouped.to_excel(writer, index=False, sheet_name='Colocador')
                 captador_grouped.to_excel(writer, index=False, sheet_name='Captador')
                 total_grouped.to_excel(writer, index=False, sheet_name='Total')
