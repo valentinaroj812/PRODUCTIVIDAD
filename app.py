@@ -52,3 +52,22 @@ if uploaded_file:
         st.error(f"Error procesando el archivo: {e}")
 else:
     st.info("📁 Esperando que subas un archivo Excel.")
+
+
+            # Exportar a Excel
+            from io import BytesIO
+            import xlsxwriter
+
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                colocador_grouped.to_excel(writer, index=False, sheet_name='Colocador')
+                captador_grouped.to_excel(writer, index=False, sheet_name='Captador')
+                total_grouped.to_excel(writer, index=False, sheet_name='Total')
+                total_ops.to_excel(writer, index=False, sheet_name='Operaciones')
+
+            st.download_button(
+                label="📥 Descargar reporte completo en Excel",
+                data=output.getvalue(),
+                file_name="productividad_oficinas.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
