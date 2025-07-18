@@ -1,28 +1,66 @@
-# Productividad por Oficina (Streamlit App)
 
-Esta es una aplicación web en Streamlit que calcula la productividad de cada oficina a partir de un archivo Excel.
+# 📊 App de Análisis de Comisiones - Junio 2025
 
-## Requisitos
+Esta aplicación en Streamlit permite analizar los cierres inmobiliarios del mes de junio 2025 y calcular las comisiones correspondientes por oficina, según el tipo de operación (venta o alquiler) y si fue compartida o no.
 
-- Python 3.7+
-- pip
+---
 
-## Instalación
+## 🧩 Estructura del Proyecto
 
-```bash
-git clone https://github.com/tu-usuario/productividad-app-streamlit.git
-cd productividad-app-streamlit
-pip install -r requirements.txt
-streamlit run app.py
+```
+📁 tu-repositorio
+├── app_comisiones.py        # Código principal de la aplicación
+├── requirements.txt         # Dependencias necesarias para ejecutarla
 ```
 
-Luego abre tu navegador en la URL que te indica el terminal (por defecto http://localhost:8501)
+---
 
-## Uso
+## 🚀 ¿Cómo usar la app?
 
-1. Sube un archivo Excel con una hoja que contenga las columnas `OFICINA COLOCADOR` y `Precio Cierre`.
-2. Verás una tabla con la suma de productividad por oficina.
+### Opción 1: Ejecutar localmente
 
-## Licencia
+1. Clona este repositorio:
+   ```bash
+   git clone https://github.com/tu_usuario/tu_repositorio.git
+   cd tu_repositorio
+   ```
 
-MIT
+2. Instala las dependencias:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Ejecuta la app:
+   ```bash
+   streamlit run app_comisiones.py
+   ```
+
+---
+
+### Opción 2: Subir a [Streamlit Cloud](https://streamlit.io/cloud)
+
+1. Crea un repositorio en GitHub con estos archivos:
+   - `app_comisiones.py`
+   - `requirements.txt`
+
+2. Entra a [Streamlit Cloud](https://streamlit.io/cloud) y crea una nueva app.
+
+3. Selecciona el repositorio y configura:
+   - **Main file**: `app_comisiones.py`
+
+4. Haz clic en **Deploy** y ¡listo!
+
+---
+
+## 📄 Reglas de Comisión Aplicadas
+
+- **Venta no compartida**: 4% para la oficina (si captador = colocador)
+- **Venta compartida**: 2% para cada oficina
+- **Alquiler no compartido**: 100% para la oficina
+- **Alquiler compartido**: 50% para cada oficina
+
+---
+
+## 🧠 Autor
+
+Desarrollado con 💡 por inteligencia artificial para Century 21.
