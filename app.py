@@ -2,68 +2,81 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-st.title("📊 Reporte de Productividad por Oficina")
+st.title("Análisis de Comisiones - Junio 2025")
 
-uploaded_file = st.file_uploader("Sube un archivo Excel (.xlsx)", type="xlsx")
+# Cargar archivo Excel
+uploaded_file = st.file_uploader("Sube el archivo Excel con los cierres", type=["xlsx"])
 
 if uploaded_file:
-    try:
-        df = pd.read_excel(uploaded_file, sheet_name=0)
+    df = pd.read_excel(uploaded_file)
+    df['Fecha Cierre'] = pd.to_datetime(df['Fecha Cierre'], errors='coerce')
+    df = df[df['Fecha Cierre'].dt.month == 6]
 
-        if all(col in df.columns for col in ['OFICINA COLOCADOR', 'OFICINA CAPTADOR', 'Precio Cierre']):
-            st.header("🔹 Productividad por Rol")
+    # Calcular comisiones por fila
+    def calcular_comision(row):
+        tipo_operacion = row.get('Tipo de Operación', '').lower()
+        oficina_captador = row.get('OFICINA CAPTADOR')
+        oficina_colocador = row.get('OFICINA COLOCADOR')
+        precio_cierre = row.get('Precio Cierre', 0)
 
-            # Colocador
-            colocador = df[['OFICINA COLOCADOR', 'Precio Cierre']].dropna(subset=['OFICINA COLOCADOR'])
-            colocador = colocador.rename(columns={'OFICINA COLOCADOR': 'OFICINA'})
-            colocador_grouped = colocador.groupby('OFICINA')['Precio Cierre'].sum().reset_index()
-            colocador_grouped = colocador_grouped.sort_values(by='Precio Cierre', ascending=False)
-            st.subheader("🟦 Colocador")
-            st.dataframe(colocador_grouped, use_container_width=True)
+        if pd.isna(precio_cierre) or precio_cierre == 0:
+            return {}
 
-            # Captador
-            captador = df[['OFICINA CAPTADOR', 'Precio Cierre']].dropna(subset=['OFICINA CAPTADOR'])
-            captador = captador.rename(columns={'OFICINA CAPTADOR': 'OFICINA'})
-            captador_grouped = captador.groupby('OFICINA')['Precio Cierre'].sum().reset_index()
-            captador_grouped = captador_grouped.sort_values(by='Precio Cierre', ascending=False)
-            st.subheader("🟩 Captador")
-            st.dataframe(captador_grouped, use_container_width=True)
-
-            # Total (Colocador + Captador)
-            st.header("🔹 Productividad Total por Oficina (Colocador + Captador)")
-            oficinas_combined = pd.concat([colocador, captador], axis=0)
-            total_grouped = oficinas_combined.groupby('OFICINA')['Precio Cierre'].sum().reset_index()
-            total_grouped = total_grouped.sort_values(by='Precio Cierre', ascending=False)
-            st.dataframe(total_grouped, use_container_width=True)
-
-            # Número de operaciones
-            st.header("🔹 Número de Operaciones por Oficina")
-            colocador_ops = df['OFICINA COLOCADOR'].value_counts().rename_axis('OFICINA').reset_index(name='Operaciones Colocador')
-            captador_ops = df['OFICINA CAPTADOR'].value_counts().rename_axis('OFICINA').reset_index(name='Operaciones Captador')
-            total_ops = pd.merge(colocador_ops, captador_ops, on='OFICINA', how='outer').fillna(0)
-            total_ops['Operaciones Totales'] = total_ops['Operaciones Colocador'] + total_ops['Operaciones Captador']
-            total_ops = total_ops.sort_values(by='Operaciones Totales', ascending=False)
-            st.dataframe(total_ops, use_container_width=True)
-
-            # Exportar a Excel
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                colocador_grouped.to_excel(writer, index=False, sheet_name='Colocador')
-                captador_grouped.to_excel(writer, index=False, sheet_name='Captador')
-                total_grouped.to_excel(writer, index=False, sheet_name='Total')
-                total_ops.to_excel(writer, index=False, sheet_name='Operaciones')
-
-            st.download_button(
-                label="📥 Descargar reporte completo en Excel",
-                data=output.getvalue(),
-                file_name="productividad_oficinas.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-
+        comisiones = {}
+        if oficina_captador == oficina_colocador:
+            oficina = oficina_captador
+            if tipo_operacion == 'venta':
+                comisiones[oficina] = round(precio_cierre * 0.04, 2)
+            elif tipo_operacion == 'alquiler':
+                comisiones[oficina] = round(precio_cierre * 1.0, 2)
         else:
-            st.error("❌ El archivo debe contener las columnas: 'OFICINA COLOCADOR', 'OFICINA CAPTADOR' y 'Precio Cierre'.")
+            if tipo_operacion == 'venta':
+                porcentaje = 0.02
+            elif tipo_operacion == 'alquiler':
+                porcentaje = 0.5
+            else:
+                return {}
 
-    except Exception as e:
-        st.error(f"Error procesando el archivo: {e}")
-else:
-    st.info("📁 Esperando que subas un archivo Excel.")
+            if pd.notna(oficina_captador):
+                comisiones[oficina_captador] = round(precio_cierre * porcentaje, 2)
+            if pd.notna(oficina_colocador):
+                comisiones[oficina_colocador] = round(precio_cierre * porcentaje, 2)
+
+        return comisiones
+
+    df['Comisiones'] = df.apply(calcular_comision, axis=1)
+
+    # Expandir comisiones a filas
+    def descomponer_comisiones(row):
+        comisiones = row['Comisiones']
+        if not comisiones:
+            return pd.DataFrame([{
+                'ID': row['ID'],
+                'Fecha Cierre': row['Fecha Cierre'],
+                'Oficina': None,
+                'Comisión': 0.0
+            }])
+        return pd.DataFrame([{
+            'ID': row['ID'],
+            'Fecha Cierre': row['Fecha Cierre'],
+            'Oficina': oficina,
+            'Comisión': monto
+        } for oficina, monto in comisiones.items()])
+
+    comisiones_expandidas = pd.concat(
+        [descomponer_comisiones(row) for _, row in df.iterrows()],
+        ignore_index=True
+    )
+
+    st.subheader("Comisiones por Oficina")
+    st.dataframe(comisiones_expandidas)
+
+    # Descargar como Excel
+    def to_excel(dataframe):
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            dataframe.to_excel(writer, index=False, sheet_name='Comisiones')
+        return output.getvalue()
+
+    excel_data = to_excel(comisiones_expandidas)
+    st.download_button("📥 Descargar Excel", data=excel_data, file_name="comisiones_junio_2025.xlsx")
